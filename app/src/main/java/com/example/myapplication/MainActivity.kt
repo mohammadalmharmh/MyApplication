@@ -142,8 +142,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 cityInput.text.clear()
                 latitudeInput.text.clear()
                 longitudeInput.text.clear()
-                // Refresh map
-                retrieveCities()
+                // Add marker and move map to the new city
+                val latLng = LatLng(latitude, longitude)
+                fetchTemperature(city, latLng)
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10f))
             } else {
                 Toast.makeText(this, "Failed to add city", Toast.LENGTH_SHORT).show()
             }
@@ -201,14 +203,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun retrieveCities() {
         mMap.clear() // Clear existing markers
-        val boundsBuilder = LatLngBounds.Builder()
-        var hasMarkers = false
+        val idNumber = idNumberInput.text.toString()
 
-        // Query Content Provider
-        contentResolver.query(CONTENT_URI, null, null, null, null)?.use { cursor ->
-            Log.d("MainActivity", "Cursor count: ${cursor.count}")
-            if (cursor.moveToFirst()) {
-                do {
+        if (idNumber.isNotEmpty()) {
+            // Query Content Provider for specific ID
+            contentResolver.query(
+                CONTENT_URI,
+                null,
+                "id_number = ?",
+                arrayOf(idNumber),
+                null
+            )?.use { cursor ->
+                Log.d("MainActivity", "Cursor count for ID $idNumber: ${cursor.count}")
+                if (cursor.moveToFirst()) {
                     val city = cursor.getString(cursor.getColumnIndexOrThrow("city"))
                     val latitude = cursor.getDouble(cursor.getColumnIndexOrThrow("latitude"))
                     val longitude = cursor.getDouble(cursor.getColumnIndexOrThrow("longitude"))
@@ -216,22 +223,47 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     // Fetch temperature and add marker
                     fetchTemperature(city, latLng)
-                    boundsBuilder.include(latLng)
-                    hasMarkers = true
-                } while (cursor.moveToNext())
-            }
-        }
-
-        // Adjust map bounds
-        if (hasMarkers) {
-            try {
-                val bounds = boundsBuilder.build()
-                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
-            } catch (e: IllegalStateException) {
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+                    // Move map to the city's location
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10f))
+                } else {
+                    Toast.makeText(this, "City not found", Toast.LENGTH_SHORT).show()
+                    // Fallback to default location
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+                }
             }
         } else {
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+            // Query all cities if no ID is provided
+            val boundsBuilder = LatLngBounds.Builder()
+            var hasMarkers = false
+
+            contentResolver.query(CONTENT_URI, null, null, null, null)?.use { cursor ->
+                Log.d("MainActivity", "Cursor count: ${cursor.count}")
+                if (cursor.moveToFirst()) {
+                    do {
+                        val city = cursor.getString(cursor.getColumnIndexOrThrow("city"))
+                        val latitude = cursor.getDouble(cursor.getColumnIndexOrThrow("latitude"))
+                        val longitude = cursor.getDouble(cursor.getColumnIndexOrThrow("longitude"))
+                        val latLng = LatLng(latitude, longitude)
+
+                        // Fetch temperature and add marker
+                        fetchTemperature(city, latLng)
+                        boundsBuilder.include(latLng)
+                        hasMarkers = true
+                    } while (cursor.moveToNext())
+                }
+            }
+
+            // Adjust map bounds
+            if (hasMarkers) {
+                try {
+                    val bounds = boundsBuilder.build()
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
+                } catch (e: IllegalStateException) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+                }
+            } else {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+            }
         }
     }
 
