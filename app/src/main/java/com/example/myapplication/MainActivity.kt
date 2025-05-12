@@ -70,10 +70,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Set button listeners
-        addButton.setOnClickListener { addCity() }
-        retrieveButton.setOnClickListener { retrieveCities() }
-        deleteButton.setOnClickListener { deleteCity() }
-        updateButton.setOnClickListener { updateCity() }
+        addButton.setOnClickListener {  }
+        retrieveButton.setOnClickListener {  }
+        deleteButton.setOnClickListener {  }
+        updateButton.setOnClickListener {  }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -224,11 +224,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Fetch temperature and add marker
                     fetchTemperature(city, latLng)
                     // Move map to the city's location
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10f))
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 1f))
                 } else {
                     Toast.makeText(this, "City not found", Toast.LENGTH_SHORT).show()
                     // Fallback to default location
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 10f))
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(31.9539, 35.9106), 1f))
                 }
             }
         } else {
